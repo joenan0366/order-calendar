@@ -1,7 +1,12 @@
 import { useState } from "react";
-import "./App.css"; // 必要に応じてカスタムCSS（今は未使用）
+import "./index.css"; // Tailwindが使えるように
 
-const menus = ["1stmenu A", "2ndmenu B", "Best menu"];
+const USERS = {
+  user1: "pass123",
+  user2: "zundamon",
+};
+
+const menus = ["1st menuA", "2nd menuB", "Best"];
 const today = new Date();
 
 const getNext7Days = () => {
@@ -20,8 +25,30 @@ const getNext7Days = () => {
   return days;
 };
 
+const formatJapaneseDate = (dateString) => {
+  const date = new Date(dateString);
+  const options = { month: "2-digit", day: "2-digit" };
+  const dayStr = date.toLocaleDateString("ja-JP", options);
+  const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"][date.getDay()];
+  return `${dayStr.replace("/", "月")}日(${dayOfWeek})`;
+};
+
 function App() {
+  const [userId, setUserId] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginError, setLoginError] = useState("");
+
   const [orderData, setOrderData] = useState(getNext7Days());
+
+  const handleLogin = () => {
+    if (USERS[userId] === password) {
+      setIsLoggedIn(true);
+      setLoginError("");
+    } else {
+      setLoginError("IDまたはパスワードが間違っています");
+    }
+  };
 
   const handleChange = (date, menu, value) => {
     const newData = orderData.map((day) => {
@@ -40,20 +67,52 @@ function App() {
   };
 
   const handleSubmit = () => {
-    console.log("送信データ：", orderData);
-    alert("注文を送信しました！（仮）");
+    const sendData = {
+      user: userId,
+      orders: orderData,
+    };
+    console.log("送信データ：", sendData);
+    alert(`${userId} さんの注文を送信しました！（仮）`);
   };
 
+  // ▼ ログイン画面（ログイン前）
+  if (!isLoggedIn) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <h1 className="text-2xl font-bold mb-4">ログイン</h1>
+        <input
+          type="text"
+          placeholder="ユーザーID"
+          value={userId}
+          onChange={(e) => setUserId(e.target.value)}
+          className="border px-3 py-2 mb-2 rounded w-64"
+        />
+        <input
+          type="password"
+          placeholder="パスワード"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="border px-3 py-2 mb-4 rounded w-64"
+        />
+        <button
+          onClick={handleLogin}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          ログイン
+        </button>
+        {loginError && <p className="text-red-500 mt-3">{loginError}</p>}
+      </div>
+    );
+  }
+
+  // ▼ 注文画面（ログイン後）
   return (
     <div className="p-4 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">注文カレンダー</h1>
+      <h1 className="text-xl font-bold mb-4">ようこそ、{userId} さん</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {orderData.map((day, idx) => (
           <div key={idx} className="border rounded-xl p-4 shadow">
-            <h2 className="text-lg font-semibold mb-2">
-             {formatJapaneseDate(day.date)}
-               </h2>
-
+            <h2 className="text-lg font-semibold mb-2">{formatJapaneseDate(day.date)}</h2>
             {menus.map((menu) => (
               <div key={menu} className="flex items-center justify-between mb-1">
                 <span>{menu}</span>
@@ -76,21 +135,13 @@ function App() {
       <div className="mt-6 text-center">
         <button
           onClick={handleSubmit}
-          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+          className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
         >
-          注文を送信
+          注文を送信する
         </button>
       </div>
     </div>
   );
 }
-
-const formatJapaneseDate = (dateString) => {
-  const date = new Date(dateString);
-  const options = { month: '2-digit', day: '2-digit' };
-  const dayStr = date.toLocaleDateString('ja-JP', options); // 01/11 など
-  const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
-  return `${dayStr.replace('/', '月')}日(${dayOfWeek})`;
-};
 
 export default App;
