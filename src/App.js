@@ -41,14 +41,34 @@ function App() {
 
   const [orderData, setOrderData] = useState(getNext7Days());
 
-  const handleLogin = () => {
-    if (USERS[userId] === password) {
-      setIsLoggedIn(true);
-      setLoginError("");
-    } else {
-      setLoginError("IDまたはパスワードが間違っています");
+  const handleLogin = async () => {
+    try {
+      const res = await fetch("https://script.google.com/macros/s/AKfycbxdYBW9tyBF4O-sLQDRaBtELMFXa2_xWu05NRheh-SZ66MUvg1rHJZDOfVVxBlAN9Ofxw/exec", {
+        method: "POST",
+        body: JSON.stringify({
+          type: "login",     // ログイン用のリクエストと明示
+          user: userId,
+          pass: password,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+  
+      const result = await res.json();
+  
+      if (result.status === "ok") {
+        setIsLoggedIn(true);
+        setLoginError("");
+      } else {
+        setLoginError("IDまたはパスワードが違います");
+      }
+    } catch (error) {
+      console.error(error);
+      setLoginError("通信エラーが発生しました");
     }
   };
+  
 
   const handleChange = (date, menu, value) => {
     const newData = orderData.map((day) => {
