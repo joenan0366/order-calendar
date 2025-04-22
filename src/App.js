@@ -73,7 +73,7 @@ function App() {
     };
   
     try {
-      const response = await fetch("https://script.google.com/macros/s/【ここにGASのURL】/exec", {
+      const response = await fetch("https://script.google.com/macros/s/AKfycbwe0GBTUKIApAFpyvDGJdZAQK3bGmn3Cjj9u322C1Jo7nh_8gRTKMP3fKLo0p6ugIA/exec", {
         method: "POST",
         body: JSON.stringify(sendData),
         headers: {
