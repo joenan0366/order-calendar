@@ -43,7 +43,7 @@ function App() {
 
   const handleLogin = async () => {
     try {
-      const res = await fetch("https://script.google.com/macros/s/あなたのURL/exec", {
+      const response = await fetch("https://joenan.site/wp-json/order/v1/login", {
         method: "POST",
         body: JSON.stringify({
           type: "login",
@@ -55,12 +55,7 @@ function App() {
         },
       });
   
-      console.log("レスポンスステータス:", res.status); // ← ここ追加
-      const text = await res.text(); // ← レスポンスの中身をそのまま確認
-      console.log("レスポンス本文:", text); // ← 中身表示
-  
-      const result = JSON.parse(text);
-  
+      const result = await response.json();
       if (result.status === "ok") {
         setIsLoggedIn(true);
         setLoginError("");
@@ -68,11 +63,10 @@ function App() {
         setLoginError("IDまたはパスワードが違います");
       }
     } catch (error) {
-      console.error("fetch通信エラー:", error);
+      console.error("通信エラー:", error);
       setLoginError("通信エラーが発生しました");
     }
   };
-  
   
 
   const handleChange = (date, menu, value) => {
@@ -93,27 +87,25 @@ function App() {
 
   const handleSubmit = async () => {
     const sendData = {
-      user: userId,       // ログインしたユーザー名
-      orders: orderData,  // 注文データ（全日付分）
+      user: userId,
+      orders: orderData,
     };
   
     try {
-      const response = await fetch("https://script.google.com/macros/s/AKfycbwe0GBTUKIApAFpyvDGJdZAQK3bGmn3Cjj9u322C1Jo7nh_8gRTKMP3fKLo0p6ugIA/exec", {
+      const response = await fetch("https://joenan.site/wp-json/order/v1/submit", {
         method: "POST",
-        body: JSON.stringify(sendData),
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify(sendData),
       });
   
-      if (response.ok) {
-        alert("スプレッドシートに送信しました！");
-      } else {
-        alert("送信に失敗しました。");
-      }
-    } catch (error) {
-      alert("ネットワークエラーが発生しました。");
-      console.error(error);
+      const result = await response.text();
+      console.log("WordPressからの返答:", result);
+      alert("注文を送信しました！");
+    } catch (err) {
+      console.error("通信エラー:", err);
+      alert("通信エラーが発生しました");
     }
   };
   
