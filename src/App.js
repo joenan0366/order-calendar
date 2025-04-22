@@ -66,14 +66,32 @@ function App() {
     setOrderData(newData);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const sendData = {
-      user: userId,
-      orders: orderData,
+      user: userId,       // ログインしたユーザー名
+      orders: orderData,  // 注文データ（全日付分）
     };
-    console.log("送信データ：", sendData);
-    alert(`${userId} さんの注文を送信しました！（仮）`);
+  
+    try {
+      const response = await fetch("https://script.google.com/macros/s/【ここにGASのURL】/exec", {
+        method: "POST",
+        body: JSON.stringify(sendData),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+  
+      if (response.ok) {
+        alert("スプレッドシートに送信しました！");
+      } else {
+        alert("送信に失敗しました。");
+      }
+    } catch (error) {
+      alert("ネットワークエラーが発生しました。");
+      console.error(error);
+    }
   };
+  
 
   // ▼ ログイン画面（ログイン前）
   if (!isLoggedIn) {
