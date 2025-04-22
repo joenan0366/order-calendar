@@ -43,10 +43,10 @@ function App() {
 
   const handleLogin = async () => {
     try {
-      const res = await fetch("https://script.google.com/macros/s/AKfycbxdYBW9tyBF4O-sLQDRaBtELMFXa2_xWu05NRheh-SZ66MUvg1rHJZDOfVVxBlAN9Ofxw/exec", {
+      const res = await fetch("https://script.google.com/macros/s/あなたのURL/exec", {
         method: "POST",
         body: JSON.stringify({
-          type: "login",     // ログイン用のリクエストと明示
+          type: "login",
           user: userId,
           pass: password,
         }),
@@ -55,7 +55,11 @@ function App() {
         },
       });
   
-      const result = await res.json();
+      console.log("レスポンスステータス:", res.status); // ← ここ追加
+      const text = await res.text(); // ← レスポンスの中身をそのまま確認
+      console.log("レスポンス本文:", text); // ← 中身表示
+  
+      const result = JSON.parse(text);
   
       if (result.status === "ok") {
         setIsLoggedIn(true);
@@ -64,10 +68,11 @@ function App() {
         setLoginError("IDまたはパスワードが違います");
       }
     } catch (error) {
-      console.error(error);
+      console.error("fetch通信エラー:", error);
       setLoginError("通信エラーが発生しました");
     }
   };
+  
   
 
   const handleChange = (date, menu, value) => {
