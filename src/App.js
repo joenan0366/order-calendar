@@ -43,8 +43,8 @@ function App() {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch("https://joenan.site/wordpress/wp-json/order/v1/login
-/wordpress/wp-json/order/v1/login", {
+      const response = await fetch("https://joenan.site/wordpress/wp-json/order/v1/login"
+, {
         method: "POST",
         body: JSON.stringify({
           type: "login",
@@ -93,8 +93,7 @@ function App() {
     };
   
     try {
-      const response = await fetch("https://joenan.site/wordpress/wp-json/order/v1/login
-/wordpress/wp-json/order/v1/submit", {
+      const response = await fetch("https://joenan.site/wordpress/wp-json/order/v1/submit", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
