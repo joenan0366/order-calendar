@@ -84,26 +84,39 @@ function App() {
 
   // ――― 数量変更時の即保存 ―――
   const handleChange = async (date, menu, value) => {
-    const qty = parseInt(value,10);
-    // UI 更新
+    const qty = parseInt(value, 10);
+    // ① UI 更新
     setOrderData(prev =>
       prev.map(d =>
-        d.date===date
-          ? { ...d, quantities:{ ...d.quantities, [menu]:qty } }
+        d.date === date
+          ? { ...d, quantities: { ...d.quantities, [menu]: qty } }
           : d
       )
     );
-    // サーバーへ保存
+  
+    // ② サーバー保存
+    const payload = { user: userId, date, menu, quantity: qty };
+    console.log("🔄 POST /update  payload:", payload);
     try {
-      await fetch(`${API_BASE}/wp-json/order/v1/update`, {
-        method:  "POST",
-        headers: { "Content-Type":"application/json" },
-        body:    JSON.stringify({ user:userId, date, menu, quantity:qty })
+      const res = await fetch(`${API_BASE}/wp-json/order/v1/update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
+      const text = await res.text();
+      console.log("📶 /update status:", res.status);
+      console.log("📥 /update raw body:", text);
+      // JSON なら
+      try {
+        console.log("🔍 /update parsed:", JSON.parse(text));
+      } catch (e) {
+        console.warn("⚠️ cannot parse JSON:", e);
+      }
     } catch (err) {
-      console.error("自動保存エラー:", err);
+      console.error("❌ fetch error:", err);
     }
   };
+  
 
   // 未ログイン時はログイン画面
   if (!isLoggedIn) {
