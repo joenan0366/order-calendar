@@ -48,6 +48,7 @@ function App() {
       });
       console.log("fetch戻り:", res);
       const json = await res.json();
+      console.log("JSON解析結果:", json);
       // …
     } catch (err) {
       console.error("通信失敗:", err);
