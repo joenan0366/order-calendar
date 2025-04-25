@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./index.css";
-
+// App.js
+const API_BASE = "https://joenan.site";
 const menus = ["1st A", "2nd B", "Best"];
 const today = new Date();
 
@@ -40,24 +41,16 @@ function App() {
 
   const handleLogin = async () => {
     try {
-      const res  = await fetch("/wp-json/order/v1/login", {
-        method:  "POST",
+      const res = await fetch(`${API_BASE}/wp-json/order/v1/login`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ user: userId, pass: password }),
+        body: JSON.stringify({ user: userId, pass: password }),
       });
+      console.log("fetch戻り:", res);
       const json = await res.json();
-      if (json.status === "ok") {
-        setIsLoggedIn(true);
-        setLoginError("");
-        fetch("/wp-json/order/v1/holidays")
-          .then(r => r.json())
-          .then(data => setHolidays(data.holidays || []))
-          .catch(console.error);
-      } else {
-        setLoginError("IDまたはパスワードが違います");
-      }
+      // …
     } catch (err) {
-      console.error(err);
+      console.error("通信失敗:", err);
       setLoginError("通信エラーが発生しました");
     }
   };
