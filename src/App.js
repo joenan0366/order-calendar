@@ -50,9 +50,14 @@ function App() {
         setLoginError("");
         // 祝日取得
         fetch(`${API_BASE}/wp-json/order/v1/holidays`)
-          .then(r=>r.json())
-          .then(d=>setHolidays(d.holidays||[]))
-          .catch(console.error);
+        .then(res => res.json())
+        .then(data => {
+          // data.holidays が ["2025/04/25","2025/04/26",…] の想定
+          const normalized = (data.holidays || []).map(d => d.replace(/\//g, "-"));
+          console.log("normalized holidays:", normalized);
+          setHolidays(normalized);
+        })
+        .catch(console.error);
         // 過去注文取得
         fetch(`${API_BASE}/wp-json/order/v1/orders?user=${encodeURIComponent(userId)}`)
           .then(r=>r.json())
