@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import "./index.css"; // Tailwind が使えるように
+import "./index.css";
 
 const USERS = {
   user1: "pass123",
@@ -30,7 +30,7 @@ const formatJapaneseDate = (dateString) => {
   const d = new Date(dateString);
   const opts = { month: "2-digit", day: "2-digit" };
   const dayStr = d.toLocaleDateString("ja-JP", opts);
-  const dow = ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
+  const dow = ["日","月","火","水","木","金","土"][d.getDay()];
   return `${dayStr.replace("/", "月")}日(${dow})`;
 };
 
@@ -46,7 +46,7 @@ function App() {
     try {
       const res = await fetch("/wp-json/order/v1/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type":"application/json" },
         body: JSON.stringify({ user: userId, pass: password, type: "login" }),
       });
       const json = await res.json();
@@ -62,24 +62,24 @@ function App() {
     }
   };
 
-  // 数量変更時に即保存
+  // 数量変更時に即サーバー／ローカル両方更新
   const handleChange = async (date, menu, value) => {
     const qty = parseInt(value, 10);
-    const newData = orderData.map((d) =>
-      d.date === date
-        ? { ...d, quantities: { ...d.quantities, [menu]: qty } }
-        : d
+    // ① UI 更新
+    setOrderData((prev) =>
+      prev.map((d) =>
+        d.date === date
+          ? { ...d, quantities: { ...d.quantities, [menu]: qty } }
+          : d
+      )
     );
-    setOrderData(newData);
-
-    // 差分だけサーバーへ
+    // ② サーバーに差分だけ送信
     try {
       await fetch("/wp-json/order/v1/update", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type":"application/json" },
         body: JSON.stringify({
           user: userId,
-          type: "update",
           date,
           menu,
           quantity: qty,
@@ -120,9 +120,9 @@ function App() {
   }
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
+    <div className="p-4 max-w-6xl mx-auto">
       <h1 className="text-xl font-bold mb-4">ようこそ、{userId} さん</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {orderData.map((day) => (
           <div
             key={day.date}
@@ -132,7 +132,10 @@ function App() {
               {formatJapaneseDate(day.date)}
             </h2>
             {menus.map((menu) => (
-              <div key={menu} className="flex items-center justify-between mb-1">
+              <div
+                key={menu}
+                className="flex items-center justify-between mb-1"
+              >
                 <span>{menu}</span>
                 <select
                   value={day.quantities[menu]}
