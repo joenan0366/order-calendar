@@ -1,6 +1,7 @@
 {
   "name": "order-calendar",
   "version": "0.1.0",
+  "proxy": "https://joenan.site",
   "private": true,
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
