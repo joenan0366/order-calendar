@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import "./index.css";
 
 const API_BASE = "https://joenan.site";   // ← 本番サイトの URL
-const menus    = ["1st A", "2nd B", "Best"];
+const menus    = ["A", "B", "Best"];
 const today    = new Date();
 
 // 翌日以降 dayCount 日分のデフォルト行データを作成
