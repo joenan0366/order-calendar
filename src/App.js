@@ -47,9 +47,11 @@ function App() {
       const res = await fetch("/wp-json/order/v1/login", {
         method: "POST",
         headers: { "Content-Type":"application/json" },
-        body: JSON.stringify({ user: userId, pass: password, type: "login" }),
+        body: JSON.stringify({ user: userId, pass: password, type:"login" }),
       });
+      console.log("fetch戻り:", res);
       const json = await res.json();
+      console.log("json解析結果:", json);
       if (json.status === "ok") {
         setIsLoggedIn(true);
         setLoginError("");
@@ -57,10 +59,11 @@ function App() {
         setLoginError("IDまたはパスワードが違います");
       }
     } catch (err) {
-      console.error(err);
+      console.error("catch発火:", err);
       setLoginError("通信エラーが発生しました");
     }
   };
+  
 
   // 数量変更時に即サーバー／ローカル両方更新
   const handleChange = async (date, menu, value) => {
