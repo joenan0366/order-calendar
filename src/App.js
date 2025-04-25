@@ -1,5 +1,5 @@
-import { useState } from "react";
-import "./index.css"; // Tailwindが使えるように
+import { useState, useEffect } from "react";
+import "./index.css"; // Tailwind が使えるように
 
 const USERS = {
   user1: "pass123",
@@ -9,15 +9,16 @@ const USERS = {
 const menus = ["1st menuA", "2nd menuB", "Best"];
 const today = new Date();
 
-const getNext7Days = () => {
+// 翌日以降 dayCount 日分を生成
+const getNextDays = (dayCount = 30) => {
   const days = [];
-  for (let i = 0; i < 7; i++) {
-    const date = new Date();
-    date.setDate(today.getDate() + i);
+  for (let i = 1; i <= dayCount; i++) {
+    const d = new Date();
+    d.setDate(today.getDate() + i);
     days.push({
-      date: date.toISOString().split("T")[0],
-      quantities: menus.reduce((acc, menu) => {
-        acc[menu] = 0;
+      date: d.toISOString().split("T")[0],
+      quantities: menus.reduce((acc, m) => {
+        acc[m] = 0;
         return acc;
       }, {}),
     });
@@ -26,11 +27,11 @@ const getNext7Days = () => {
 };
 
 const formatJapaneseDate = (dateString) => {
-  const date = new Date(dateString);
-  const options = { month: "2-digit", day: "2-digit" };
-  const dayStr = date.toLocaleDateString("ja-JP", options);
-  const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"][date.getDay()];
-  return `${dayStr.replace("/", "月")}日(${dayOfWeek})`;
+  const d = new Date(dateString);
+  const opts = { month: "2-digit", day: "2-digit" };
+  const dayStr = d.toLocaleDateString("ja-JP", opts);
+  const dow = ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
+  return `${dayStr.replace("/", "月")}日(${dow})`;
 };
 
 function App() {
@@ -38,80 +39,57 @@ function App() {
   const [password, setPassword] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [orderData, setOrderData] = useState(getNextDays(30));
 
-  const [orderData, setOrderData] = useState(getNext7Days());
-
+  // ログイン
   const handleLogin = async () => {
     try {
-      const response = await fetch("https://joenan.site/wp-json/order/v1/login"
-, {
+      const res = await fetch("/wp-json/order/v1/login", {
         method: "POST",
-        body: JSON.stringify({
-          type: "login",
-          user: userId,
-          pass: password,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user: userId, pass: password, type: "login" }),
       });
-  
-      const result = await response.json();
-      if (result.status === "ok") {
+      const json = await res.json();
+      if (json.status === "ok") {
         setIsLoggedIn(true);
         setLoginError("");
       } else {
         setLoginError("IDまたはパスワードが違います");
       }
-    } catch (error) {
-      console.error("通信エラー:", error);
+    } catch (err) {
+      console.error(err);
       setLoginError("通信エラーが発生しました");
     }
   };
-  
 
-  const handleChange = (date, menu, value) => {
-    const newData = orderData.map((day) => {
-      if (day.date === date) {
-        return {
-          ...day,
-          quantities: {
-            ...day.quantities,
-            [menu]: parseInt(value),
-          },
-        };
-      }
-      return day;
-    });
+  // 数量変更時に即保存
+  const handleChange = async (date, menu, value) => {
+    const qty = parseInt(value, 10);
+    const newData = orderData.map((d) =>
+      d.date === date
+        ? { ...d, quantities: { ...d.quantities, [menu]: qty } }
+        : d
+    );
     setOrderData(newData);
-  };
 
-  const handleSubmit = async () => {
-    const sendData = {
-      user: userId,
-      orders: orderData,
-    };
-  
+    // 差分だけサーバーへ
     try {
-      const response = await fetch("https://joenan.site/wp-json/order/v1/submit", {
+      await fetch("/wp-json/order/v1/update", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(sendData),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user: userId,
+          type: "update",
+          date,
+          menu,
+          quantity: qty,
+        }),
       });
-  
-      const result = await response.text();
-      console.log("WordPressからの返答:", result);
-      alert("注文を送信しました！");
     } catch (err) {
-      console.error("通信エラー:", err);
-      alert("通信エラーが発生しました");
+      console.error("自動保存エラー:", err);
     }
   };
-  
 
-  // ▼ ログイン画面（ログイン前）
   if (!isLoggedIn) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
@@ -141,20 +119,26 @@ function App() {
     );
   }
 
-  // ▼ 注文画面（ログイン後）
   return (
     <div className="p-4 max-w-5xl mx-auto">
       <h1 className="text-xl font-bold mb-4">ようこそ、{userId} さん</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {orderData.map((day, idx) => (
-          <div key={idx} className="border rounded-xl p-4 shadow">
-            <h2 className="text-lg font-semibold mb-2">{formatJapaneseDate(day.date)}</h2>
+        {orderData.map((day) => (
+          <div
+            key={day.date}
+            className="bg-white rounded-2xl p-6 shadow hover:shadow-lg transition"
+          >
+            <h2 className="text-lg font-semibold mb-2">
+              {formatJapaneseDate(day.date)}
+            </h2>
             {menus.map((menu) => (
               <div key={menu} className="flex items-center justify-between mb-1">
                 <span>{menu}</span>
                 <select
                   value={day.quantities[menu]}
-                  onChange={(e) => handleChange(day.date, menu, e.target.value)}
+                  onChange={(e) =>
+                    handleChange(day.date, menu, e.target.value)
+                  }
                   className="border rounded px-2 py-1"
                 >
                   {[...Array(11).keys()].map((n) => (
@@ -167,14 +151,6 @@ function App() {
             ))}
           </div>
         ))}
-      </div>
-      <div className="mt-6 text-center">
-        <button
-          onClick={handleSubmit}
-          className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
-        >
-          注文を送信する
-        </button>
       </div>
     </div>
   );
