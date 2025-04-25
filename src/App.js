@@ -1,11 +1,10 @@
 import { useState } from "react";
 import "./index.css";
 
-const USERS = { user1: "pass123", user2: "zundamon" };
-const menus = ["1st menuA", "2nd menuB", "Best"];
+const menus = ["1st A", "2nd B", "Best"];
 const today = new Date();
 
-// ── 翌日以降 dayCount 日分を生成 ───────────────────────────
+// 翌日以降 dayCount 日分のデータを生成
 const getNextDays = (dayCount = 30) => {
   const days = [];
   for (let i = 1; i <= dayCount; i++) {
@@ -22,13 +21,13 @@ const getNextDays = (dayCount = 30) => {
   return days;
 };
 
-// ── 日本語日付フォーマット ─────────────────────────────────
+// 日付を "MM/DD(曜)" 形式にフォーマット
 const formatJapaneseDate = (dateString) => {
   const d = new Date(dateString);
-  const opts = { month: "2-digit", day: "2-digit" };
-  const dayStr = d.toLocaleDateString("ja-JP", opts);
-  const dow = ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
-  return `${dayStr.replace("/", "月")}日(${dow})`;
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const dow = ["日","月","火","水","木","金","土"][d.getDay()];
+  return `${mm}/${dd}(${dow})`;
 };
 
 function App() {
@@ -37,24 +36,22 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [orderData, setOrderData]   = useState(getNextDays(30));
-  const [holidays, setHolidays]     = useState([]); // 祝日リスト
+  const [holidays, setHolidays]     = useState([]);
 
-  // ── ログイン ───────────────────────────────────────────────
   const handleLogin = async () => {
     try {
       const res  = await fetch("/wp-json/order/v1/login", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user: userId, pass: password }),
+        body:    JSON.stringify({ user: userId, pass: password }),
       });
       const json = await res.json();
       if (json.status === "ok") {
         setIsLoggedIn(true);
         setLoginError("");
-        // 祝日を取得して配列だけ取り出す
         fetch("/wp-json/order/v1/holidays")
           .then(r => r.json())
-          .then(data => setHolidays(data.holidays))
+          .then(data => setHolidays(data.holidays || []))
           .catch(console.error);
       } else {
         setLoginError("IDまたはパスワードが違います");
@@ -65,7 +62,6 @@ function App() {
     }
   };
 
-  // ── 数量変更時に即サーバー／ローカル更新 ─────────────────────
   const handleChange = async (date, menu, value) => {
     const qty = parseInt(value, 10);
     setOrderData(prev =>
@@ -77,16 +73,15 @@ function App() {
     );
     try {
       await fetch("/wp-json/order/v1/update", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user: userId, date, menu, quantity: qty }),
+        body:    JSON.stringify({ user: userId, date, menu, quantity: qty }),
       });
     } catch (err) {
       console.error("自動保存エラー:", err);
     }
   };
 
-  // ── ログイン前の画面 ───────────────────────────────────────
   if (!isLoggedIn) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
@@ -116,14 +111,25 @@ function App() {
     );
   }
 
-  // ── ログイン後の注文画面 ───────────────────────────────────
+  // 日曜を除外し、最初のセルが月曜列に来るよう空セルを前に埋める
+  const filtered = orderData.filter(d => new Date(d.date).getDay() !== 0);
+  const firstDow = new Date(filtered[0].date).getDay();            // 1=月…6=土
+  const blankCount = (firstDow + 6) % 7;                          // 月→0, 火→1 … 土→5
+  const cells = [
+    ...Array(blankCount).fill(null),
+    ...filtered
+  ];
+
   return (
     <div className="p-4 max-w-6xl mx-auto">
       <h1 className="text-xl font-bold mb-4">ようこそ、{userId} さん</h1>
-      {/* ７列レイアウトに変更 (月～日) */}
-      <div className="grid grid-cols-7 gap-4">
-        {orderData.map(day => {
-          const isHoliday = holidays.includes(day.date); // true=休日
+      <div className="grid grid-cols-6 gap-4">
+        {cells.map((day, i) => {
+          if (!day) {
+            // 空セル
+            return <div key={`blank-${i}`} />;
+          }
+          const isHoliday = holidays.includes(day.date);
           return (
             <div
               key={day.date}
@@ -147,9 +153,7 @@ function App() {
                     className="border rounded px-2 py-1"
                   >
                     {[...Array(11).keys()].map(n => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
+                      <option key={n} value={n}>{n}</option>
                     ))}
                   </select>
                 </div>
