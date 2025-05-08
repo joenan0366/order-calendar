@@ -124,15 +124,15 @@ function App() {
         body: JSON.stringify(payload),
       });
       const text = await res.text();
-      console.log("📶 /update status:", res.status);
-      console.log("📥 /update raw body:", text);
+      console.log("/update status:", res.status);
+      console.log("/update raw body:", text);
       try {
-        console.log("🔍 /update parsed:", JSON.parse(text));
+        console.log("/update parsed:", JSON.parse(text));
       } catch (e) {
-        console.warn("⚠️ cannot parse JSON:", e);
+        console.warn("cannot parse JSON:", e);
       }
     } catch (err) {
-      console.error("❌ fetch error:", err);
+      console.error("fetch error:", err);
     }
   };
 
