@@ -56,7 +56,6 @@ function App() {
           cache: 'no-cache',
           headers: {
             'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache'
           }
         })
         .then(res => res.json())
@@ -75,7 +74,6 @@ function App() {
           cache: 'no-cache',
           headers: {
             'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache'
           }
         })
         .then(r => {
