@@ -161,7 +161,7 @@ function App() {
         <div className="flex">
           {weeks.map((week, wi) => (
             <div key={wi} className="snap-start flex-shrink-0 w-screen px-2">
-              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-6">
+              <div className="grid gap-3 grid-cols-6">
                 {week.map((day, di) => (
                   day ? (
                     <div key={di} className={`rounded-2xl p-4 transition ${holidays.includes(day.date) ? 'bg-gray-200 cursor-not-allowed' : 'bg-white shadow hover:shadow-lg'}`}>
