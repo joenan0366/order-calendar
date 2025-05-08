@@ -1,0 +1,27 @@
+// vercel.json
+{
+  "version": 2,
+  "headers": [
+    // API Routes へのリクエストにキャッシュ無効を指示
+    {
+      "source": "/api/order/v1/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" }
+      ]
+    },
+    // React アプリ本体（HTML）へのリクエストも常に最新を取得
+    {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" }
+      ]
+    },
+    // その他の静的アセット（JS/CSS）も必要に応じ無効化
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" }
+      ]
+    }
+  ]
+}
