@@ -22,53 +22,46 @@ const getNextDays = (dayCount = 30) => {
 // "MM/DD(曜)" 表記
 const formatJapaneseDate = (dateString) => {
   const d   = new Date(dateString);
-  const mm  = String(d.getMonth()+1).padStart(2,"0");
-  const dd  = String(d.getDate()).padStart(2,"0");
+  const mm  = String(d.getMonth()+1).padStart(2, "0");
+  const dd  = String(d.getDate()).padStart(2, "0");
   const dow = ["日","月","火","水","木","金","土"][d.getDay()];
   return `${mm}/${dd}(${dow})`;
 };
 
 function App() {
-  const [userId,    setUserId]    = useState("");
-  const [password,  setPassword]  = useState("");
-  const [isLoggedIn,setIsLoggedIn]= useState(false);
-  const [loginError,setLoginError]= useState("");
-  const [orderData, setOrderData] = useState(getNextDays(30));
-  const [holidays,  setHolidays]  = useState([]);
+  const [userId, setUserId]     = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [orderData, setOrderData]   = useState(getNextDays(30));
+  const [holidays, setHolidays]     = useState([]);
 
-  // ――― ログイン ―――
+  // ログイン処理
   const handleLogin = async () => {
     try {
-      const res  = await fetch(`${API_BASE}/wp-json/order/v1/login`, {
+      const res = await fetch(`${API_BASE}/wp-json/order/v1/login`, {
         method:  "POST",
-        headers: { "Content-Type":"application/json" },
-        body:    JSON.stringify({ user: userId, pass: password })
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ user: userId, pass: password }),
+        credentials: 'include'
       });
       const json = await res.json();
-      if ( json.status === "ok" ) {
+      if (json.status === "ok") {
         setIsLoggedIn(true);
         setLoginError("");
-
         // 祝日取得
         fetch(`${API_BASE}/wp-json/order/v1/holidays`, {
-          method: 'GET',
-          credentials: 'include',
-          cache: 'no-cache',
-          headers: { 'Content-Type': 'application/json' }
+          credentials: 'include'
         })
-        .then(res => res.json())
+        .then(r => r.json())
         .then(data => {
           const normalized = (data.holidays || []).map(d => d.replace(/\//g, '-'));
           setHolidays(normalized);
         })
         .catch(console.error);
-
         // 過去注文取得
         fetch(`${API_BASE}/wp-json/order/v1/orders?user=${encodeURIComponent(userId)}`, {
-          method: 'GET',
-          credentials: 'include',
-          cache: 'no-cache',
-          headers: { 'Content-Type': 'application/json' }
+          credentials: 'include'
         })
         .then(r => r.json())
         .then(d => {
@@ -90,10 +83,10 @@ function App() {
     }
   };
 
-  // ――― 数量変更時の即保存 ―――
+  // 数量変更ハンドラ
   const handleChange = async (date, menu, value) => {
     const qty = parseInt(value, 10);
-    // UI 更新
+    // 楽観的にUI更新
     setOrderData(prev =>
       prev.map(d =>
         d.date === date
@@ -102,40 +95,55 @@ function App() {
       )
     );
     // サーバー保存
-    const payload = { user: userId, date, menu, quantity: qty };
     try {
-      const res = await fetch(`${API_BASE}/wp-json/order/v1/update`, {
-        method: "POST",
+      await fetch(`${API_BASE}/wp-json/order/v1/update`, {
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body:    JSON.stringify({ user: userId, date, menu, quantity: qty }),
         credentials: 'include'
       });
-      await res.text();
     } catch (err) {
       console.error(err);
     }
   };
 
-  // 未ログイン時はログイン画面
+  // 未ログイン時の画面
   if (!isLoggedIn) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
         <h1 className="text-2xl font-bold mb-4">ログイン</h1>
-        <input type="text" placeholder="ユーザーID" value={userId} onChange={e=>setUserId(e.target.value)} className="border px-3 py-2 mb-2 rounded w-64" />
-        <input type="password" placeholder="パスワード" value={password} onChange={e=>setPassword(e.target.value)} className="border px-3 py-2 mb-4 rounded w-64" />
-        <button onClick={handleLogin} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">ログイン</button>
+        <input
+          type="text"
+          placeholder="ユーザーID"
+          value={userId}
+          onChange={e => setUserId(e.target.value)}
+          className="border px-3 py-2 mb-2 rounded w-64"
+        />
+        <input
+          type="password"
+          placeholder="パスワード"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          className="border px-3 py-2 mb-4 rounded w-64"
+        />
+        <button
+          onClick={handleLogin}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          ログイン
+        </button>
         {loginError && <p className="text-red-500 mt-3">{loginError}</p>}
       </div>
     );
   }
 
-  // カレンダー準備（空セル挿入）
+  // 日曜日除外＆月曜始まり
   const filtered   = orderData.filter(d => new Date(d.date).getDay() !== 0);
   const firstDow   = new Date(filtered[0].date).getDay();
   const blankCount = (firstDow + 6) % 7;
   const cells      = [...Array(blankCount).fill(null), ...filtered];
 
-  // 週ごとに6列ずつに分割
+  // 6 日ずつ切り出して週単位配列を作成
   const weeks = [];
   for (let i = 0; i < cells.length; i += 6) {
     weeks.push(cells.slice(i, i + 6));
@@ -144,33 +152,51 @@ function App() {
   return (
     <div className="p-4 max-w-6xl mx-auto">
       <h1 className="text-xl font-bold mb-4">ようこそ、{userId} さん</h1>
-      {/* 横スクロールで週単位表示 */}
-      <div className="overflow-x-auto py-2">
-        <div className="flex gap-4 px-2">
+
+      {/* 横スワイプ可能な週表示 */}
+      <div className="overflow-x-auto scroll-snap-x snap-mandatory">
+        <div className="flex">
           {weeks.map((week, wi) => (
-            <div key={wi} className="grid grid-cols-6 gap-4 min-w-[360px]">
-              {week.map((day, di) => {
-                if (!day) return <div key={di} />;
-                const isHoliday = holidays.includes(day.date);
-                return (
-                  <div key={di} className={
-                    `rounded-2xl p-4 transition ` +
-                    (isHoliday
-                      ? "bg-gray-200 cursor-not-allowed"
-                      : "bg-white shadow hover:shadow-lg")
-                  }>
-                    <h2 className="text-lg font-semibold mb-2">{formatJapaneseDate(day.date)}</h2>
-                    {menus.map(menu => (
-                      <div key={menu} className="flex items-center justify-between mb-1 text-sm">
-                        <span>{menu}</span>
-                        <select disabled={isHoliday} value={day.quantities[menu]} onChange={e=>handleChange(day.date,menu,e.target.value)} className="border rounded px-2 py-1 w-12 text-right">
-                          {[...Array(11).keys()].map(n=>(<option key={n} value={n}>{n}</option>))}
-                        </select>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
+            <div
+              key={wi}
+              className="snap-start flex-shrink-0 w-screen px-2"
+            >
+              {/* 週コンテナ内はレスポンシブ2列グリッド */}
+              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-6">
+                {week.map((day, di) => (
+                  day ? (
+                    <div
+                      key={di}
+                      className={`rounded-2xl p-4 transition ${
+                        holidays.includes(day.date)
+                          ? 'bg-gray-200 cursor-not-allowed'
+                          : 'bg-white shadow hover:shadow-lg'
+                      }`}
+                    >
+                      <h2 className="text-lg font-semibold mb-2">
+                        {formatJapaneseDate(day.date)}
+                      </h2>
+                      {menus.map(menu => (
+                        <div key={menu} className="flex justify-between mb-1 text-sm">
+                          <span>{menu}</span>
+                          <select
+                            disabled={holidays.includes(day.date)}
+                            value={day.quantities[menu]}
+                            onChange={e => handleChange(day.date, menu, e.target.value)}
+                            className="border rounded px-2 py-1 w-12 text-right"
+                          >
+                            {[...Array(11).keys()].map(n => (
+                              <option key={n} value={n}>{n}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div key={di} />
+                  )
+                ))}
+              </div>
             </div>
           ))}
         </div>
