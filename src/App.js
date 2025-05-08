@@ -48,51 +48,31 @@ function App() {
       if ( json.status === "ok" ) {
         setIsLoggedIn(true);
         setLoginError("");
-
         // 祝日取得
-        fetch(`${API_BASE}/wp-json/order/v1/holidays`, {
-          method: 'GET',
-          credentials: 'include',
-          cache: 'no-cache',
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache'
-          }
-        })
+        fetch(`${API_BASE}/wp-json/order/v1/holidays`)
         .then(res => res.json())
         .then(data => {
+          // ["2025/04/25", ...] → ["2025-04-25", ...] に
           const normalized = (data.holidays || []).map(d => d.replace(/\//g, '-'));
           console.log('normalized holidays:', normalized);
+          // window に置いておくと Console で触れる
           window.holidays = normalized;
           setHolidays(normalized);
         })
         .catch(console.error);
-
-        // 過去注文取得（キャッシュ無効化）
-        fetch(`${API_BASE}/wp-json/order/v1/orders?user=${encodeURIComponent(userId)}`, {
-          method: 'GET',
-          credentials: 'include',
-          cache: 'no-cache',
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache'
-          }
-        })
-        .then(r => {
-          console.log('Orders fetch status:', r.status, r.headers.get('cache-control'));
-          return r.json();
-        })
-        .then(d => {
-          const existing = d.orders || {};
-          console.log('Fetched orders (fresh):', existing);
-          setOrderData(cur =>
-            cur.map(day => ({
-              ...day,
-              quantities: existing[day.date] || day.quantities
-            }))
-          );
-        })
-        .catch(console.error);
+        // 過去注文取得
+        fetch(`${API_BASE}/wp-json/order/v1/orders?user=${encodeURIComponent(userId)}`)
+          .then(r=>r.json())
+          .then(d=>{
+            const existing = d.orders || {};
+            setOrderData(cur =>
+              cur.map(day => ({
+                ...day,
+                quantities: existing[day.date] || day.quantities
+              }))
+            );
+          })
+          .catch(console.error);
       } else {
         setLoginError("IDまたはパスワードが違います");
       }
@@ -124,18 +104,18 @@ function App() {
         body: JSON.stringify(payload),
       });
       const text = await res.text();
-      console.log("/update status:", res.status);
-      console.log("/update raw body:", text);
+      console.log("📶 /update status:", res.status);
+      console.log("📥 /update raw body:", text);
+      // JSON なら
       try {
-        console.log("/update parsed:", JSON.parse(text));
+        console.log("🔍 /update parsed:", JSON.parse(text));
       } catch (e) {
-        console.warn("cannot parse JSON:", e);
+        console.warn("⚠️ cannot parse JSON:", e);
       }
     } catch (err) {
-      console.error("fetch error:", err);
+      console.error("❌ fetch error:", err);
     }
   };
-
   
 
   // 未ログイン時はログイン画面
