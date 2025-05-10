@@ -35,6 +35,7 @@ function App() {
   const [loginError, setLoginError] = useState("");
   const [orderData, setOrderData]   = useState(getNextDays(30));
   const [holidays, setHolidays]     = useState([]);
+  const [displayName, setDisplayName] = useState("");
 
   // ログイン処理
   const handleLogin = async () => {
@@ -49,6 +50,7 @@ function App() {
       if (json.status === "ok") {
         setIsLoggedIn(true);
         setLoginError("");
+        setDisplayName( json.displayName || userId );
         // 祝日取得
         fetch(`${API_BASE}/wp-json/order/v1/holidays`, { credentials: 'include' })
           .then(r => r.json())
@@ -129,7 +131,7 @@ function App() {
 
   return (
     <div className="p-4 max-w-6xl mx-auto">
-      <h1 className="text-xl font-bold mb-4">ようこそ、{userId} さん</h1>
+      <h1 className="text-xl font-bold mb-4">ようこそ、{displayName} さん</h1>
 
       {/* スマホ：2列縦スクロール */}
       <div className="grid grid-cols-2 gap-3 sm:hidden">
