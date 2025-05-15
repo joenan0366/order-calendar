@@ -155,7 +155,7 @@ function App() {
 
   return (
     <div className="p-4 max-w-6xl mx-auto">
-      <h1 className="text-xl font-bold mb-4">ようこそ、{displayName} さん</h1>
+      <h1 className="text-xl font-bold mb-4">ようこそ、{displayName} 様</h1>
 
       {/* スマホ：2列縦スクロール */}
       <div className="grid grid-cols-2 gap-3 sm:hidden">
