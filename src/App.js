@@ -4,6 +4,23 @@ import "./index.css";
 const API_BASE = "https://joenan.site";
 const menus    = ["A", "B", "Best"];
 const today    = new Date();
+const fetchOrders = async () => {
+  try {
+    const res = await fetch(`${API_BASE}/wp-json/order/v1/orders?user=${encodeURIComponent(userId)}`, {
+      credentials: 'include'
+    });
+    const json = await res.json();
+    const existing = json.orders || {};
+    setOrderData(cur =>
+      cur.map(day => ({
+        ...day,
+        quantities: existing[day.date] || day.quantities
+      }))
+    );
+  } catch (e) {
+    console.error(e);
+  }
+};
 
 // 翌日以降 dayCount 日分のデフォルト行データを作成
 const getNextDays = (dayCount = 30) => {
@@ -102,6 +119,11 @@ function App() {
           type="text"
           placeholder="ユーザーID"
           value={userId}
+          inputMode="latin"
+           // 入力パターン（英字と数字のみ）
+          pattern="[A-Za-z0-9]+"
+           // スマホで英数字キーボードを出しやすくする
+          autoComplete="username"
           onChange={e => setUserId(e.target.value)}
           className="border px-3 py-2 mb-2 rounded w-64"
         />
